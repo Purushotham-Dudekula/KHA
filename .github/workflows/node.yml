@@ -1,0 +1,41 @@
+name: Node CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  test-and-load:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: "true"
+      JWT_SECRET: testsecret
+      MONGO_URI: mongodb://127.0.0.1:27017/testdb
+      REDIS_DISABLED: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Skip load test in CI
+        if: ${{ env.CI == 'true' }}
+        run: echo "Skipping k6 load test in CI environment"
+
+      - name: Success message
+        run: echo "All checks passed — ready for deployment"
+
+      - name: Deploy placeholder
+        run: echo "Deploy step here (Render / Railway / VPS)"

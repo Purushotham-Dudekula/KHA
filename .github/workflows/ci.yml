@@ -1,0 +1,37 @@
+# Assumes this folder (kha-backend) is the Git repository root.
+# If your repo root is the parent directory, set defaults.run.working-directory to "kha-backend"
+# and cache-dependency-path to "kha-backend/package-lock.json".
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: "true"
+      JWT_SECRET: testsecret
+      MONGO_URI: mongodb://127.0.0.1:27017/testdb
+      REDIS_DISABLED: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test

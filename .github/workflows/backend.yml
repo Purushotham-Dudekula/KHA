@@ -1,0 +1,88 @@
+name: Backend Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      staging_url:
+        description: "Staging URL to run load test against"
+        required: true
+        default: "https://your-staging-url.com"
+
+jobs:
+  backend-ci:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: "true"
+      JWT_SECRET: testsecret
+      MONGO_URI: mongodb://127.0.0.1:27017/testdb
+      REDIS_DISABLED: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Skip load test in CI
+        if: ${{ env.CI == 'true' }}
+        run: echo "Skipping k6 load test in CI environment"
+
+      - name: Success message
+        run: echo "All checks passed — ready for deployment"
+
+      - name: Deploy placeholder
+        run: echo "Deploy step here (Render / Railway / VPS)"
+
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Security audit (prod deps)
+        run: npm audit --audit-level=high --omit=dev
+
+  # Requires STAGING_URL secret in repo settings.
+  # Skipped automatically when secret is not configured.
+  # Add secret at: Settings → Secrets → Actions → STAGING_URL
+  load-test:
+    if: >
+      (github.event_name == 'pull_request' && secrets.STAGING_URL != '') ||
+      (github.event_name == 'workflow_dispatch' && inputs.staging_url != '')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run k6 thresholds against staging
+        env:
+          BASE_URL: ${{ github.event.inputs.staging_url || secrets.STAGING_URL }}
+          CI: "true"
+        run: k6 run loadtest/k6/booking_payment.js

@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kha-backend-app
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/kha-backend
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    command: npm run dev
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - kha-network
+
+  mongo:
+    image: mongo:7
+    container_name: kha-backend-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - kha-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: kha-backend-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - kha-network
+
+volumes:
+  mongo_data:
+
+networks:
+  kha-network:
+    driver: bridge
