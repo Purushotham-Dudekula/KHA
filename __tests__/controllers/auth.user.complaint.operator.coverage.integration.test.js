@@ -2,7 +2,6 @@
  * Integration coverage: auth (refresh/logout/verify 404), user (me, nearby), complaint, operator.
  */
 const request = require("supertest");
-const jwt = require("jsonwebtoken");
 
 jest.mock("../../src/services/user.service", () => ({
   findNearbyOperators: jest.fn(async () => ({
