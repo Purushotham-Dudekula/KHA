@@ -5,7 +5,7 @@ import eslintConfigPrettier from "eslint-config-prettier";
 
 export default [
   {
-    ignores: ["node_modules/**", "coverage/**", "eslint.config.mjs", "loadtest/k6/**"],
+    ignores: ["node_modules/**", "coverage/**", "eslint.config.mjs", "loadtest/k6/**", "scratch/**"],
   },
   js.configs.recommended,
   pluginN.configs["flat/recommended-module"],

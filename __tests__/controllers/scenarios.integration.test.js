@@ -1,5 +1,4 @@
 const request = require("supertest");
-const mongoose = require("mongoose");
 const cron = require("node-cron");
 const jwt = require("jsonwebtoken");
 
@@ -128,7 +127,7 @@ describe("Booking and Admin Controllers Scenarios", () => {
       .set("Authorization", `Bearer ${farmerToken}`)
       .send({ reason: "Inside window" });
 
-    if (res.status !== 200) console.log("Test 1 res.body:", res.body);
+    if (res.status !== 200) console.warn("Test 1 res.body:", res.body);
     expect(res.status).toBe(200);
     const updated = await Booking.findById(booking._id);
     expect(updated.status).toBe("cancelled");
@@ -158,7 +157,7 @@ describe("Booking and Admin Controllers Scenarios", () => {
       .set("Authorization", `Bearer ${farmerToken}`)
       .send({ reason: "Outside window" });
 
-    if (res.status !== 200) console.log("Test 2 res.body:", res.body);
+    if (res.status !== 200) console.warn("Test 2 res.body:", res.body);
     expect(res.status).toBe(200);
     const updated = await Booking.findById(booking._id);
     expect(updated.status).toBe("cancelled");
@@ -196,7 +195,7 @@ describe("Booking and Admin Controllers Scenarios", () => {
       .set("Authorization", `Bearer ${operatorToken}`)
       .send({ action: "reject" });
 
-    if (res.status !== 200) console.log("Test 4 res.body:", res.body);
+    if (res.status !== 200) console.warn("Test 4 res.body:", res.body);
     expect(res.status).toBe(200);
     const updated = await Booking.findById(booking._id);
     expect(updated.status).toBe("rejected"); // operator rejection puts it in 'rejected' state natively.
@@ -213,7 +212,7 @@ describe("Booking and Admin Controllers Scenarios", () => {
 
     // Expect 400 because advance is already paid. 
     // In Kha backend, idempotency/business rules throw 400 Bad Request if state already advanced.
-    if (res.status !== 400) console.log("Test 5 res.body:", res.body);
+    if (res.status !== 400) console.warn("Test 5 res.body:", res.body);
     expect(res.status).toBe(400);
     expect(res.body.message).toMatch(/Cannot process payment/i);
   });
@@ -239,7 +238,7 @@ describe("Booking and Admin Controllers Scenarios", () => {
       .set("Authorization", `Bearer ${adminToken}`)
       .send({ action: "approve", refundReason: "Approved by test admin" });
 
-    if (res.status !== 200) console.log("Test 6 res.body:", res.body);
+    if (res.status !== 200) console.warn("Test 6 res.body:", res.body);
     expect(res.status).toBe(200);
     const updated = await Booking.findById(booking._id);
     expect(updated.refundStatus).toBe("partial_failed");
