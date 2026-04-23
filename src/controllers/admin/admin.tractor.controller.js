@@ -30,6 +30,14 @@ const { logAuditAction } = require("../../services/auditLog.service");
 const { invalidateUserAuthCache } = require("../../middleware/auth.middleware");
 const { parsePagination } = require("../../utils/pagination");
 
+function parsePagination(query = {}) {
+  const page = Math.max(1, parseInt(query.page, 10) || 1);
+  const limitRaw = parseInt(query.limit, 10);
+  const limit = Math.min(Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 10), 100);
+  const skip = (page - 1) * limit;
+  return { page, limit, skip };
+}
+
 async function verifyTractor(req, res, next) {
   try {
     const { id } = req.params;

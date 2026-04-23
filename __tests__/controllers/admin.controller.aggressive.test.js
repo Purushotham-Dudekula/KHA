@@ -125,7 +125,7 @@ describe("admin.controller aggressive", () => {
     await c.listAdmins({ query: {} }, makeRes(), jest.fn()); //200
 
     // Generic smoke for remaining exports to exercise try/catch and early returns
-    for (const [name, fn] of Object.entries(c)) {
+    for (const [_name, fn] of Object.entries(c)) {
       if (typeof fn !== "function") continue;
       await fn(
         {
