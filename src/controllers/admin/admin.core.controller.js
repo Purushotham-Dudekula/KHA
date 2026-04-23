@@ -28,14 +28,8 @@ const { AppError } = require("../../utils/AppError");
 const { logAdminActivity } = require("../../services/adminActivityLog.service");
 const { logAuditAction } = require("../../services/auditLog.service");
 const { invalidateUserAuthCache } = require("../../middleware/auth.middleware");
+const { parsePagination } = require("../../utils/pagination");
 
-function parsePagination(query = {}) {
-  const page = Math.max(1, parseInt(query.page, 10) || 1);
-  const limitRaw = parseInt(query.limit, 10);
-  const limit = Math.min(Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 10), 100);
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-}
 
 function shouldIncludeDemandLocations(includeLocations) {
   return includeLocations === true || includeLocations === "true" || includeLocations === "1";
@@ -182,7 +176,7 @@ async function deactivateAdmin(req, res, next) {
 
 async function listAdmins(_req, res, next) {
   try {
-    const { page, limit, skip } = parsePagination(_req.query);
+    const { page, limit, skip } = parsePagination(_req.query, { maxLimit: 100 });
     const total = await Admin.countDocuments({ role: "admin" });
     const admins = await Admin.find({ role: "admin" })
       .select("name email role isActive createdAt")
@@ -207,7 +201,7 @@ async function listAdmins(_req, res, next) {
 
 async function listUsers(req, res, next) {
   try {
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, { maxLimit: 100 });
     const filter = {};
     const [total, users] = await Promise.all([
       User.countDocuments(filter),
@@ -230,7 +224,7 @@ async function listUsers(req, res, next) {
 
 async function listBookings(req, res, next) {
   try {
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, { maxLimit: 100 });
     const filter = {};
     const [total, bookings] = await Promise.all([
       Booking.countDocuments(filter),
@@ -367,7 +361,7 @@ async function blockUser(req, res, next) {
 
 async function listComplaints(req, res, next) {
   try {
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, { maxLimit: 100 });
     const filter = {};
     const [total, complaints] = await Promise.all([
       Complaint.countDocuments(filter),
@@ -428,7 +422,7 @@ async function respondComplaint(req, res, next) {
 
 async function listAdminAuditLogs(req, res, next) {
   try {
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, { maxLimit: 100 });
     const [total, logs] = await Promise.all([
       AdminAuditLog.countDocuments({}),
       AdminAuditLog.find({})
@@ -508,7 +502,7 @@ async function upsertPricing(req, res, next) {
 
 async function listPricing(req, res, next) {
   try {
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, { maxLimit: 100 });
     const total = await Pricing.countDocuments({});
     const pricing = await Pricing.find({}).sort({ updatedAt: -1 }).skip(skip).limit(limit).lean();
     const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -575,7 +569,7 @@ async function upsertSeasonalPricing(req, res, next) {
 
 async function listSeasonalPricing(req, res, next) {
   try {
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, { maxLimit: 100 });
     const total = await SeasonalPricing.countDocuments({});
     const list = await SeasonalPricing.find({})
       .sort({ startDate: -1, createdAt: -1 })
@@ -1099,7 +1093,7 @@ module.exports = {
   getAdminMe,
   listAdminActivity,
   __testables: {
-    parsePagination,
+    parsePagination: (query) => parsePagination(query, { maxLimit: 100 }),
     adminPublic,
     shouldIncludeDemandLocations,
   }

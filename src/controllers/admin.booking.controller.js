@@ -1,17 +1,10 @@
 const Booking = require("../models/booking.model");
 const { sendSuccess } = require("../utils/apiResponse");
-
-function parsePagination(query = {}) {
-  const page = Math.max(1, parseInt(query.page, 10) || 1);
-  const limitRaw = parseInt(query.limit, 10);
-  const limit = Math.min(Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 10), 100);
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-}
+const { parsePagination } = require("../utils/pagination");
 
 async function listBookings(req, res, next) {
   try {
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, { maxLimit: 100 });
     const filter = {};
     const [total, bookings] = await Promise.all([
       Booking.countDocuments(filter),

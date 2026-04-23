@@ -31,6 +31,13 @@ export default [
       "n/no-process-exit": "off",
       "n/preserve-caught-error": "off",
       "preserve-caught-error": "off",
+      "preserve-caught-error": "off",
+    },
+  },
+  {
+    files: ["scripts/**/*.js", "__tests__/**/*.js"],
+    rules: {
+      "no-console": "off",
     },
   },
   eslintConfigPrettier,

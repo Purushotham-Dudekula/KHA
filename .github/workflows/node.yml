@@ -11,8 +11,12 @@ jobs:
     env:
       NODE_ENV: test
       CI: "true"
-      JWT_SECRET: testsecret
-      MONGO_URI: mongodb://127.0.0.1:27017/testdb
+      JWT_SECRET: test-secret-key-minimum-32-characters
+      JWT_REFRESH_SECRET: test-refresh-secret-32-characters
+      MONGO_URI: mongodb://localhost:27017/kha-test
+      METRICS_SECRET: test-metrics-secret
+      MSG91_AUTH_KEY: test-key-for-ci
+      REQUIRE_SECURE_DOCUMENTS: false
       REDIS_DISABLED: "true"
     steps:
       - name: Checkout

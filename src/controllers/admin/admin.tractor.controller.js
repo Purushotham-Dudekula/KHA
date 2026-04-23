@@ -28,6 +28,7 @@ const { AppError } = require("../../utils/AppError");
 const { logAdminActivity } = require("../../services/adminActivityLog.service");
 const { logAuditAction } = require("../../services/auditLog.service");
 const { invalidateUserAuthCache } = require("../../middleware/auth.middleware");
+const { parsePagination } = require("../../utils/pagination");
 
 function parsePagination(query = {}) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
@@ -123,7 +124,7 @@ async function rejectTractor(req, res, next) {
 
 async function listPendingTractors(req, res, next) {
   try {
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, { maxLimit: 100 });
     const filter = {
       verificationStatus: "pending",
       isDeleted: { $ne: true },

@@ -294,17 +294,6 @@ function isMachineSlotBookingDuplicateKey(err) {
   return false;
 }
 
-function parsePagination(query = {}) {
-  const pageRaw = parseInt(query.page, 10);
-  const page = Math.max(1, Number.isFinite(pageRaw) ? pageRaw : 1);
-
-  const limitRaw = parseInt(query.limit, 10);
-  const limit = Math.min(Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 10), 50);
-
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-}
-
 async function payAdvance(req, res, next) {
   let paymentLock = null;
   let paymentLockKey = "";

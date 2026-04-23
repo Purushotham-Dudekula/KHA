@@ -1,18 +1,11 @@
+const { parsePagination } = require("../utils/pagination");
 const Notification = require("../models/notification.model");
 const mongoose = require("mongoose");
 const { sendSuccess } = require("../utils/apiResponse");
 
-function parsePagination(query = {}) {
-  const page = Math.max(1, parseInt(query.page, 10) || 1);
-  const limitRaw = parseInt(query.limit, 10);
-  const limit = Math.min(50, Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 10));
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-}
-
 async function listNotifications(req, res, next) {
   try {
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, { maxLimit: 50 });
     const filter = { userId: req.user._id };
     if (req.query.isRead === "true") filter.isRead = true;
     if (req.query.isRead === "false") filter.isRead = false;

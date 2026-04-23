@@ -294,17 +294,6 @@ function isMachineSlotBookingDuplicateKey(err) {
   return false;
 }
 
-function parsePagination(query = {}) {
-  const pageRaw = parseInt(query.page, 10);
-  const page = Math.max(1, Number.isFinite(pageRaw) ? pageRaw : 1);
-
-  const limitRaw = parseInt(query.limit, 10);
-  const limit = Math.min(Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 10), 50);
-
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-}
-
 async function createBooking(req, res, next) {
   try {
     if (req.user.role !== "farmer") {
@@ -492,6 +481,18 @@ async function createBooking(req, res, next) {
         code: userFacing.DUPLICATE_BOOKING.code,
         userTip: userFacing.DUPLICATE_BOOKING.userTip,
         retryable: userFacing.DUPLICATE_BOOKING.retryable,
+      });
+    }
+
+    const operatorBusy = await Booking.exists({
+      operator: resolvedOperatorId,
+      status: { $in: OPERATOR_RESPOND_BUSY_STATUSES },
+    });
+    if (operatorBusy) {
+      throw new AppError("Operator is already busy with another booking", 409, {
+        code: userFacing.OPERATOR_BUSY.code,
+        userTip: userFacing.OPERATOR_BUSY.userTip,
+        retryable: userFacing.OPERATOR_BUSY.retryable,
       });
     }
 

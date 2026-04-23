@@ -33,6 +33,8 @@ const { logAuditAction } = require("../../services/auditLog.service");
 const { acquireLock, releaseLock } = require("../../services/redisLock.service");
 const { createBookingFlow } = require("../../services/bookingLifecycle.service");
 const { isPaymentsEnabled } = require("../../utils/featureFlags");
+const { parsePagination } = require("../../utils/pagination");
+
 
 /** Operator cannot accept another booking while these are open. */
 const OPERATOR_RESPOND_BUSY_STATUSES = ["accepted", "confirmed", "en_route", "in_progress"];
@@ -292,17 +294,6 @@ function isMachineSlotBookingDuplicateKey(err) {
     if (/dup key/i.test(msg) && /tractor/i.test(msg) && /time/i.test(msg)) return true;
   }
   return false;
-}
-
-function parsePagination(query = {}) {
-  const pageRaw = parseInt(query.page, 10);
-  const page = Math.max(1, Number.isFinite(pageRaw) ? pageRaw : 1);
-
-  const limitRaw = parseInt(query.limit, 10);
-  const limit = Math.min(Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 10), 50);
-
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
 }
 
 async function respondToBooking(req, res, next) {
