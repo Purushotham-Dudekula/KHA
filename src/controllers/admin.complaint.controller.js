@@ -2,18 +2,11 @@ const mongoose = require("mongoose");
 const Complaint = require("../models/complaint.model");
 const { sendSuccess } = require("../utils/apiResponse");
 const { logger } = require("../utils/logger");
-
-function parsePagination(query = {}) {
-  const page = Math.max(1, parseInt(query.page, 10) || 1);
-  const limitRaw = parseInt(query.limit, 10);
-  const limit = Math.min(Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 10), 100);
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-}
+const { parsePagination } = require("../utils/pagination");
 
 async function listComplaints(req, res, next) {
   try {
-    const { page, limit, skip } = parsePagination(req.query);
+    const { page, limit, skip } = parsePagination(req.query, { maxLimit: 100 });
     const filter = {};
     const [total, complaints] = await Promise.all([
       Complaint.countDocuments(filter),

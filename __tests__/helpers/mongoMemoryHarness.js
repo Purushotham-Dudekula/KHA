@@ -30,6 +30,14 @@ async function connectMongoMemory() {
     await mongoose.disconnect();
   }
   await mongoose.connect(uri);
+  // Pre-init models to ensure indexes are built before any tests run
+  await Promise.all([
+    User.init(),
+    Tractor.init(),
+    Booking.init(),
+    Commission.init(),
+    Service.init(),
+  ]);
 }
 
 async function disconnectMongoMemory() {
@@ -58,13 +66,16 @@ async function teardownAllTestResources() {
 }
 
 async function resetDatabase() {
-  await mongoose.connection.dropDatabase();
+  const collections = mongoose.connection.collections;
+  const promises = Object.values(collections).map((collection) => collection.deleteMany({}));
+  await Promise.all(promises);
 }
 
 /**
  * Seeds operator + farmer + tractor + service + commission. Returns ids and farmer token.
  */
-async function seedBookingFixtures() {
+async function seedBookingFixtures(opts = {}) {
+  const { suffix = "" } = opts;
   invalidateServiceCache();
 
   await Commission.create({ percentage: 10, active: true });
@@ -79,17 +90,17 @@ async function seedBookingFixtures() {
   });
 
   const operator = await User.create({
-    phone: "+919999900001",
+    phone: `+9199999${suffix || "00001"}`,
     role: "operator",
     verificationStatus: "approved",
-    name: "Op Test",
+    name: `Op Test ${suffix}`,
     landArea: 0,
   });
 
   const farmer = await User.create({
-    phone: "+919999900002",
+    phone: `+9188888${suffix || "00002"}`,
     role: "farmer",
-    name: "Farmer Test",
+    name: `Farmer Test ${suffix}`,
     landArea: 10,
   });
 
@@ -98,7 +109,7 @@ async function seedBookingFixtures() {
     tractorType: "medium",
     brand: "BrandX",
     model: "ModelY",
-    registrationNumber: `REG-INT-${Date.now()}`,
+    registrationNumber: `REG-INT-${suffix || Date.now()}-${Math.floor(Math.random() * 1000)}`,
     machineryTypes: ["int_test_svc"],
     verificationStatus: "approved",
     isAvailable: true,
@@ -131,7 +142,7 @@ function futureBookingDate() {
 /**
  * Creates a pending booking via DB (avoids full HTTP create when only payment state is needed).
  */
-async function createPendingBookingForFarmer({ farmerId, operatorId, tractorId }) {
+async function createPendingBookingForFarmer({ farmerId, operatorId, tractorId, ...extra }) {
   const bookingDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
   return Booking.create({
     farmer: farmerId,
@@ -150,9 +161,9 @@ async function createPendingBookingForFarmer({ farmerId, operatorId, tractorId }
     totalAmount: 2750,
     estimatedAmount: 2750,
     finalAmount: 2750,
-    advancePayment: 825,
     advanceAmount: 825,
     remainingAmount: 1925,
+    ...extra,
   });
 }
 

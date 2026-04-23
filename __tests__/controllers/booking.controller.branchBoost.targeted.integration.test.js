@@ -18,6 +18,8 @@ const {
   createPendingBookingForFarmer,
 } = require("../helpers/mongoMemoryHarness");
 const Booking = require("../../src/models/booking.model");
+const User = require("../../src/models/user.model");
+const jwt = require("jsonwebtoken");
 const { notifyUser } = require("../../src/services/notification.service");
 const { expireOnce } = require("../../src/jobs/bookingPaymentLock.cron");
 
@@ -55,20 +57,34 @@ describe("booking.controller targeted branch boost", () => {
       farmerId: farmer._id,
       operatorId: operator._id,
       tractorId: tractor._id,
+      date: farStart,
+      time: "10:00",
     });
     beforeWindow.status = "accepted";
     beforeWindow.startTime = farStart;
-    beforeWindow.date = farStart;
     await beforeWindow.save();
 
+    // Create a second farmer to avoid "farmer_one_active_booking" unique index violation
+    // when having two active bookings in the same test.
+    const farmer2 = await User.create({
+      phone: "+917777700003",
+      role: "farmer",
+      name: "Farmer 2",
+      landArea: 10,
+    });
+    const farmerToken2 = jwt.sign({ id: String(farmer2._id) }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
     const afterWindow = await createPendingBookingForFarmer({
-      farmerId: farmer._id,
+      farmerId: farmer2._id,
       operatorId: operator._id,
       tractorId: tractor._id,
+      date: nearStart,
+      time: "11:00",
     });
     afterWindow.status = "accepted";
     afterWindow.startTime = nearStart;
-    afterWindow.date = nearStart;
     await afterWindow.save();
 
     const r1 = await request(app)
@@ -77,7 +93,7 @@ describe("booking.controller targeted branch boost", () => {
       .send({});
     const r2 = await request(app)
       .post(`/api/v1/bookings/${afterWindow._id}/cancel`)
-      .set("Authorization", `Bearer ${farmerToken}`)
+      .set("Authorization", `Bearer ${farmerToken2}`)
       .send({});
 
     expect(r1.status).toBe(200);

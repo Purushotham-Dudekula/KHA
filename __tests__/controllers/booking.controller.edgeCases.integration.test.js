@@ -10,6 +10,9 @@ const {
   createPendingBookingForFarmer,
   futureBookingDate,
 } = require("../helpers/mongoMemoryHarness");
+const User = require("../../src/models/user.model");
+const Tractor = require("../../src/models/tractor.model");
+const Booking = require("../../src/models/booking.model");
 
 function bookingCreateBody(tractorId) {
   return {
@@ -104,10 +107,28 @@ describe("booking.controller edge cases", () => {
     expect(acceptRes.body.data.booking.status).toBe("accepted");
 
     // Second booking for reject flow.
-    const bookingReject = await createPendingBookingForFarmer({
-      farmerId: farmer._id,
+    // Use farmer2 and tractor2 to avoid index violations (farmer_one_active_booking and machine_slot_unique_active)
+    const farmer2 = await User.create({
+      phone: "+917777799999",
+      role: "farmer",
+      name: "Farmer 2",
+      landArea: 5,
+    });
+    const tractor2 = await Tractor.create({
       operatorId: operator._id,
-      tractorId: tractor._id,
+      tractorType: "medium",
+      brand: "BrandX",
+      model: "ModelY",
+      registrationNumber: "REG-INT-EDGE-2",
+      machineryTypes: ["int_test_svc"],
+      verificationStatus: "approved",
+      isAvailable: true,
+    });
+
+    const bookingReject = await createPendingBookingForFarmer({
+      farmerId: farmer2._id,
+      operatorId: operator._id,
+      tractorId: tractor2._id,
     });
 
     const rejectRes = await request(app)

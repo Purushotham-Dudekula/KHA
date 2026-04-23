@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 
 const { createApp } = require("../../src/app");
 const Payment = require("../../src/models/payment.model");
+const User = require("../../src/models/user.model");
+const jwt = require("jsonwebtoken");
 const {
   seedBookingFixtures,
   connectMongoMemory,
@@ -94,9 +96,21 @@ describe("booking.controller uncovered branches (coverage)", () => {
 
   test("pay-advance -> paymentId reused on another booking returns 400", async () => {
     const { farmerToken, farmer, operator, tractor } = await seedBookingFixtures();
-    const booking = await createPendingBookingForFarmer({ farmerId: farmer._id, operatorId: operator._id, tractorId: tractor._id });
-    const otherBooking = await createPendingBookingForFarmer({
+    const booking = await createPendingBookingForFarmer({
       farmerId: farmer._id,
+      operatorId: operator._id,
+      tractorId: tractor._id,
+    });
+
+    // Create second farmer for concurrent active booking
+    const farmer2 = await User.create({
+      phone: "+917777711111",
+      role: "farmer",
+      name: "Farmer 2",
+    });
+
+    const otherBooking = await createPendingBookingForFarmer({
+      farmerId: farmer2._id,
       operatorId: operator._id,
       tractorId: tractor._id,
     });
@@ -250,14 +264,21 @@ describe("booking.controller uncovered branches (coverage)", () => {
   });
 
   test("refund preview -> user outside booking returns 401", async () => {
-    const { farmerToken, farmer, operator, tractor } = await seedBookingFixtures();
-    const outsider = new mongoose.Types.ObjectId();
+    const { farmerToken, operator, tractor } = await seedBookingFixtures();
+
+    // Create an outsider farmer who is NOT the one in farmerToken
+    const outsider = await User.create({
+      phone: "+916666600004",
+      role: "farmer",
+      name: "Outsider Farmer",
+    });
+
     const booking = await createPendingBookingForFarmer({
-      farmerId: outsider,
+      farmerId: outsider._id,
       operatorId: operator._id,
       tractorId: tractor._id,
     });
-    booking.farmer = outsider;
+    booking.farmer = outsider._id;
     await booking.save();
 
     const res = await request(app)
