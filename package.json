@@ -8,7 +8,7 @@
     "dev": "nodemon server.js",
     "test": "jest --runInBand",
     "coverage": "jest --runInBand --coverage",
-    "prepare": "npm audit --omit=dev || true",
+    "prepare": "npm audit --omit=dev || node -e \"process.exit(0)\"",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.js\" \"*.js\"",
     "format:check": "prettier --check \"src/**/*.js\" \"*.js\""
